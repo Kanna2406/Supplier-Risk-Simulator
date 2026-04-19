@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Risk & Resilience Simulator • Kanna</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .navy-bg { background: linear-gradient(to bottom, #0A2540, #112B4E); }
+        .card-border { border: 4px solid #0A2540; }
+        .gold-text { color: #F59E0B; }
+    </style>
+</head>
+<body class="navy-bg text-white min-h-screen">
+
+    <!-- NAVY HEADER (kept minimal) -->
+    <div class="px-8 py-6 flex items-center justify-between border-b border-white/10">
+        <div>
+            <h1 class="text-4xl font-semibold tracking-tight">Supplier Risk & Resilience Simulator</h1>
+            <p class="text-teal-300 text-lg mt-1">Real-time visibility for GCC procurement leaders • Making complex supply chain risks visually simple</p>
+            <p class="text-slate-300 text-sm">Ink & Insight by Kannappan Narayanan (Kanna)</p>
+        </div>
+
+        <a href="https://www.linkedin.com/in/kannappannarayanan" target="_blank" 
+           class="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-3xl text-sm font-medium transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4.77 0 1.4.63 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 1-1.68-1.68c0-.93.75-1.69 1.68-1.69.93 0 1.69.76 1.69 1.69 0 .93-.76 1.68-1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+            </svg>
+            linkedin.com/in/kannappannarayanan
+        </a>
+    </div>
+
+    <div class="px-8 py-10 max-w-7xl mx-auto">
+
+        <div class="grid grid-cols-12 gap-8">
+
+            <!-- RISK FACTORS -->
+            <div class="col-span-12 lg:col-span-4 bg-white/95 text-[#0A2540] rounded-3xl card-border p-8">
+                <h2 class="text-2xl font-semibold mb-6">Risk Factors</h2>
+                <div id="sliders" class="space-y-8"></div>
+            </div>
+
+            <!-- MIDDLE CONTAINER - RADAR + OVERALL RISK SCORE RIGHT ABOVE IT -->
+            <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                
+                <!-- OVERALL RISK SCORE - NOW RIGHT ABOVE THE RADAR (as requested) -->
+                <div class="bg-white/10 backdrop-blur-xl rounded-3xl p-6 text-center border border-white/20">
+                    <div id="overall-score" class="text-8xl font-bold gold-text leading-none">61</div>
+                    <div class="text-sm uppercase tracking-[2px] text-teal-300 mt-1">OVERALL RISK SCORE</div>
+                </div>
+
+                <!-- RADAR CHART -->
+                <div class="flex-1 bg-white/95 text-[#0A2540] rounded-3xl card-border p-8 flex flex-col">
+                    <div class="flex-1 flex items-center justify-center">
+                        <canvas id="radarChart" class="max-w-[380px] max-h-[380px]"></canvas>
+                    </div>
+                    
+                    <!-- Resilience Index -->
+                    <div class="mt-8 text-center">
+                        <div class="flex justify-between items-baseline text-sm uppercase font-semibold tracking-widest text-[#0A2540] mb-3">
+                            <span>RESILIENCE INDEX</span>
+                            <span id="resilience-score" class="text-4xl font-bold text-teal-600">60 / 100</span>
+                        </div>
+                        <div class="h-4 bg-slate-200 rounded-3xl overflow-hidden">
+                            <div id="resilience-fill" class="h-4 bg-gradient-to-r from-teal-400 to-teal-600 transition-all" style="width: 60%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MITIGATION RECOMMENDATIONS - DARK BLUE WITH GOLD & WHITE (high visual importance) -->
+            <div class="col-span-12 lg:col-span-4 bg-[#0A2540] text-white rounded-3xl card-border p-8">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+                    Mitigation Recommendations
+                    <span class="text-amber-400 text-xl">★</span>
+                </h2>
+                <div id="mitigations" class="space-y-4 text-sm font-medium"></div>
+            </div>
+
+        </div>
+
+        <!-- WHAT IF DISRUPTION -->
+        <div class="mt-12 bg-white/95 text-[#0A2540] rounded-3xl card-border p-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-semibold">What if a disruption happens?</h2>
+                <div class="flex items-center gap-4">
+                    <input type="range" id="disruption-slider" min="0" max="100" value="40" 
+                           class="w-80 accent-amber-500 cursor-pointer">
+                    <div id="disruption-value" class="font-mono text-4xl font-bold text-amber-600 w-16">40%</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-12 gap-8 items-start">
+                <div class="col-span-12 md:col-span-8 grid grid-cols-2 gap-8">
+                    <div>
+                        <div class="text-xs uppercase font-semibold tracking-widest">NEW RISK SCORE</div>
+                        <div id="new-risk-score" class="text-7xl font-bold text-red-600">80</div>
+                    </div>
+                    <div>
+                        <div class="text-xs uppercase font-semibold tracking-widest">ESTIMATED COST IMPACT</div>
+                        <div id="cost-impact" class="text-7xl font-bold text-amber-600">+17%</div>
+                    </div>
+                </div>
+
+                <!-- How + Why (clear and ready for any "source of truth" question) -->
+                <div class="col-span-12 md:col-span-4 space-y-6 text-base">
+                    <div>
+                        <strong>How is it calculated?</strong>
+                        <p class="text-slate-700 mt-2 text-sm">New Risk Score = Current Overall Risk × (1 + Disruption % × 0.65)<br>Cost Impact = Disruption % × 0.7</p>
+                    </div>
+                    <div>
+                        <strong>Why is it important?</strong>
+                        <p class="text-slate-700 mt-2 text-sm">This instant stress-test shows exactly how much your supplier risk and project budget would jump if a real disruption hits — giving you hard numbers to present to stakeholders.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- UNDERSTANDING THE METRICS -->
+        <div class="mt-12 bg-white/95 text-[#0A2540] rounded-3xl card-border p-8">
+            <h2 class="text-2xl font-semibold mb-8">Understanding the Metrics</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 text-slate-900">
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-5 h-5 bg-red-500 rounded-full"></div>
+                        <h3 class="font-semibold text-xl">What is the Overall Risk Score?</h3>
+                    </div>
+                    <p class="text-base">The single most important number that tells you how risky a supplier is right now. Calculated live from the eight risk factors.</p>
+                    <p class="font-semibold mt-4">How it is calculated:</p>
+                    <p class="text-base">Simple average of all 8 sliders. Range: 0–100.</p>
+                    <div class="mt-6 flex gap-6 text-sm font-medium">
+                        <div class="flex items-center gap-2"><span class="text-emerald-500 text-xl">•</span> 0–40 = Low risk</div>
+                        <div class="flex items-center gap-2"><span class="text-amber-500 text-xl">•</span> 41–70 = Moderate risk</div>
+                        <div class="flex items-center gap-2"><span class="text-red-500 text-xl">•</span> 71–100 = High risk</div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-5 h-5 bg-teal-500 rounded-full"></div>
+                        <h3 class="font-semibold text-xl">What is the Resilience Index?</h3>
+                    </div>
+                    <p class="text-base">Shows how well the supplier can absorb and recover from the threat. Think of it as the supplier’s “shock absorber.”</p>
+                    <p class="font-semibold mt-4">How it is calculated:</p>
+                    <p class="text-base">Inverse relationship to the Overall Risk Score. Higher risk = lower resilience. Range: 0–100.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-xs text-white/60 py-8 border-t border-white/10">
+        Built from 20+ years GCC procurement experience by Kannappan Narayanan (Kanna) • Feel free to share or embed
+    </div>
+
+    <script>
+        function initTailwind() {
+            tailwind.config = { content: ["*"] }
+        }
+
+        const riskFactors = [
+            { name: "Geopolitical Risk", key: "geo", initial: 85 },
+            { name: "Financial Stability", key: "fin", initial: 45 },
+            { name: "Delivery Reliability", key: "del", initial: 78 },
+            { name: "ESG Compliance", key: "esg", initial: 68 },
+            { name: "Cyber Risk", key: "cbr", initial: 88 },
+            { name: "Capacity Risk", key: "cap", initial: 55 },
+            { name: "Quality Risk", key: "qlt", initial: 65 },
+            { name: "Single-Source Dependency", key: "ssd", initial: 90 }
+        ]
+
+        let values = {}
+        let radarChartInstance = null
+
+        function calculateOverall() {
+            const sum = Object.values(values).reduce((a, b) => a + b, 0)
+            return Math.round(sum / 8)
+        }
+
+        function calculateResilience(overall) {
+            return Math.max(20, Math.round(100 - (overall * 0.58)))
+        }
+
+        function updateMitigations(overall) {
+            const container = document.getElementById("mitigations")
+            container.innerHTML = ""
+
+            // Always show at least 5 recommendations - prioritised by risk + strong defaults
+            let recs = [
+                "Diversify single-source suppliers immediately (geopolitical exposure)",
+                "Enhance cyber security audits with vendors",
+                "Activate alternative logistics routes",
+                "Schedule quarterly financial health reviews",
+                "Conduct regular supplier performance audits",
+                "Build stronger long-term supplier relationships with clear SLAs",
+                "Review and update contract terms for better risk sharing"
+            ]
+
+            // Add extra high-risk ones dynamically
+            if (values.geo >= 75) recs.unshift("Prioritise geopolitical diversification strategy")
+            if (values.cbr >= 75) recs.unshift("Implement immediate cyber risk mitigation plan")
+            if (values.ssd >= 75) recs.unshift("Reduce single-source dependency urgently")
+
+            // Display only top 7 to keep it clean but always >5
+            recs.slice(0, 7).forEach(text => {
+                const div = document.createElement("div")
+                div.className = "flex items-start gap-3 bg-white/10 rounded-2xl p-4 text-white"
+                div.innerHTML = `<span class="text-amber-400 text-xl">→</span><span>${text}</span>`
+                container.appendChild(div)
+            })
+        }
+
+        function updateDashboard() {
+            const overall = calculateOverall()
+            const resilience = calculateResilience(overall)
+
+            // Overall Score (now above radar)
+            const scoreEl = document.getElementById("overall-score")
+            scoreEl.textContent = overall
+            if (overall <= 40) scoreEl.className = "text-8xl font-bold text-emerald-400 leading-none"
+            else if (overall <= 70) scoreEl.className = "text-8xl font-bold text-amber-400 leading-none"
+            else scoreEl.className = "text-8xl font-bold text-red-400 leading-none"
+
+            // Resilience
+            document.getElementById("resilience-fill").style.width = `${resilience}%`
+            document.getElementById("resilience-score").textContent = `${resilience} / 100`
+
+            // Radar Chart - maximum visual impact
+            const labels = riskFactors.map(r => r.name)
+            const dataPoints = riskFactors.map(r => values[r.key])
+
+            if (radarChartInstance) radarChartInstance.destroy()
+            radarChartInstance = new Chart(document.getElementById("radarChart"), {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Risk Level',
+                        data: dataPoints,
+                        fill: true,
+                        backgroundColor: 'rgba(245, 158, 11, 0.35)',
+                        borderColor: '#F59E0B',
+                        borderWidth: 6,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#F59E0B',
+                        pointBorderWidth: 4,
+                        pointRadius: 7,
+                        pointHoverRadius: 9
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            min: 0, max: 100,
+                            ticks: { color: '#0A2540', font: { size: 14, weight: '700' }, backdropColor: 'transparent' },
+                            grid: { color: 'rgba(10, 37, 64, 0.3)', lineWidth: 2 },
+                            angleLines: { color: 'rgba(10, 37, 64, 0.3)', lineWidth: 2 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            })
+
+            updateMitigations(overall)
+            updateWhatIf()
+        }
+
+        function createSliders() {
+            const container = document.getElementById("sliders")
+            riskFactors.forEach(factor => {
+                values[factor.key] = factor.initial
+                const div = document.createElement("div")
+                div.className = "flex flex-col"
+                div.innerHTML = `
+                    <div class="flex justify-between text-base mb-2 font-semibold">
+                        <span>${factor.name}</span>
+                        <span id="${factor.key}-val" class="font-mono font-bold text-teal-600">${factor.initial}</span>
+                    </div>
+                    <input type="range" id="${factor.key}" min="0" max="100" value="${factor.initial}" 
+                           class="accent-teal-500 w-full cursor-pointer">
+                `
+                container.appendChild(div)
+
+                const slider = div.querySelector("input")
+                slider.addEventListener("input", () => {
+                    values[factor.key] = parseInt(slider.value)
+                    document.getElementById(`${factor.key}-val`).textContent = slider.value
+                    updateDashboard()
+                })
+            })
+        }
+
+        function updateWhatIf() {
+            const disruption = parseInt(document.getElementById("disruption-slider").value)
+            document.getElementById("disruption-value").textContent = disruption + "%"
+
+            const currentOverall = calculateOverall()
+            const newRisk = Math.min(100, Math.round(currentOverall + (currentOverall * disruption / 100 * 0.65)))
+            const costImpact = Math.round(disruption * 0.7)
+
+            document.getElementById("new-risk-score").textContent = newRisk
+            document.getElementById("cost-impact").textContent = `+${costImpact}%`
+        }
+
+        window.onload = () => {
+            initTailwind()
+            createSliders()
+            updateDashboard()
+            document.getElementById("disruption-slider").addEventListener("input", updateWhatIf)
+        }
+    </script>
+</body>
+</html>
